@@ -14,16 +14,17 @@ import java.util.concurrent.Callable;
 public class AgentLauncher {
 
     // JVM이 시작될 때 가장 먼저 실행되는 메서드
-    public static void premain(String arguments, Instrumentation instrumentation) {
+    public static void premain(String agentArgs, Instrumentation inst) {
         System.out.println("에이전트가 JVM에 침투했습니다.");
 
         new AgentBuilder.Default()
-                // 우리가 감시할 대상: 이름이 "App"으로 끝나는 모든 클래스
-                .type(ElementMatchers.nameEndsWith("App"))
+                .type(ElementMatchers.nameStartsWith("com.extreme.java"))
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) ->
                         builder.method(ElementMatchers.any())
                                 .intercept(MethodDelegation.to(TimingInterceptor.class))
-                ).installOn(instrumentation);
+                )
+                .with(AgentBuilder.Listener.StreamWriting.toSystemOut())
+                .installOn(inst);
     }
 
     // 메서드 실행 시간을 측정할 인터셉터 (내부 클래스로 간단히 구현)

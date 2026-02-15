@@ -11,7 +11,6 @@ import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
 
-// ⭐ 이 줄이 가장 중요합니다!
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
 public class AgentLauncher {

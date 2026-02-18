@@ -2,6 +2,7 @@ package com.extreme.java;
 
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.implementation.MethodDelegation;
+import net.bytebuddy.implementation.bind.annotation.AllArguments;
 import net.bytebuddy.implementation.bind.annotation.Origin;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
@@ -24,10 +25,12 @@ public class AgentLauncher {
         new AgentBuilder.Default()
                 .type(ElementMatchers.nameStartsWith("com.extreme.java"))
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) ->
-                        builder.method(isAnnotatedWith(Timer.class)) // 여기서 에러가 났던 부분!
+                        builder
+                                .method(isAnnotatedWith(Timer.class))
                                 .intercept(MethodDelegation.to(TimingInterceptor.class))
+                                .method(isAnnotatedWith(LogData.class))
+                                .intercept(MethodDelegation.to(DataLogInterceptor.class))
                 )
-                //.with(listener)
                 .installOn(inst);
     }
 
@@ -41,6 +44,18 @@ public class AgentLauncher {
                 long duration = System.nanoTime() - start;
                 System.out.printf("[%s] 실행 시간: %.4fms%n", method.getName(), duration / 1_000_000.0);
             }
+        }
+    }
+
+    public static class DataLogInterceptor {
+        @RuntimeType
+        public static Object intercept(@Origin Method method,
+                                       @AllArguments Object[] args,
+                                       @SuperCall Callable<?> callable) throws Exception {
+            System.out.printf("[%s] 입력값: %s%n", method.getName(), java.util.Arrays.toString(args));
+            Object result = callable.call();
+            System.out.printf("[%s] 반환값: %s%n", method.getName(), result);
+            return result;
         }
     }
 }

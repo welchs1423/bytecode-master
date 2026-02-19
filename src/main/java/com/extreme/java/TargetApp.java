@@ -9,6 +9,12 @@ public class TargetApp {
 
         app.processData("User123", 99);
 
+        try {
+            app.riskyTask();
+        } catch (RuntimeException e){
+            System.out.println("[TargetApp] 메인에서 예외를 안전하게 처리했습니다.");
+        }
+
         System.out.println("[TargetApp] 메인 메서드 종료!");
     }
 
@@ -20,5 +26,11 @@ public class TargetApp {
     @LogData
     public String processData(String name, int score) {
         return "Processed: " + name + " (Score: " + score + ")";
+    }
+
+    @CatchError
+    public void riskyTask(){
+        System.out.println("위험한 작업을 시작합니다...");
+        throw new RuntimeException("DB 연결 시간 초과!");
     }
 }

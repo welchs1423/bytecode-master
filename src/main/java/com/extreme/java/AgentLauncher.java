@@ -19,7 +19,6 @@ public class AgentLauncher {
     public static void premain(String agentArgs, Instrumentation inst) {
         System.out.println("에이전트가 JVM에 침투했습니다.");
 
-        // 리스너 설정 (변환 과정을 로그로 출력)
         AgentBuilder.Listener listener = AgentBuilder.Listener.StreamWriting.toSystemOut();
 
         new AgentBuilder.Default()
@@ -30,6 +29,8 @@ public class AgentLauncher {
                                 .intercept(MethodDelegation.to(TimingInterceptor.class))
                                 .method(isAnnotatedWith(LogData.class))
                                 .intercept(MethodDelegation.to(DataLogInterceptor.class))
+                                .method(isAnnotatedWith(CatchError.class))
+                                .intercept(MethodDelegation.to(ExceptionIntercepter.class))
                 )
                 .installOn(inst);
     }
@@ -56,6 +57,19 @@ public class AgentLauncher {
             Object result = callable.call();
             System.out.printf("[%s] 반환값: %s%n", method.getName(), result);
             return result;
+        }
+    }
+
+    public static class ExceptionIntercepter {
+        @RuntimeType
+        public static Object intercept(@Origin Method method, @SuperCall Callable<?> callable) throws Exception {
+            try {
+                return callable.call();
+            } catch (Exception e){
+                System.err.printf("[%s] 실행 중 예외 감지! 타입: %s, 메시지: %s%n",
+                        method.getName(), e.getClass().getSimpleName(), e.getMessage());
+                throw e;
+            }
         }
     }
 }

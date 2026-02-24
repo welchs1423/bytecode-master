@@ -14,6 +14,11 @@ JVM의 심장부인 바이트코드를 직접 조작하여 애플리케이션의
 
 ### 📅 개발 일지 (Changelog)
 
+#### [2026-02-25] Spring Boot 실전 연동 및 통합 테스트 완료
+- **Feature**: 독립된 Spring Boot 환경(Tomcat)에 에이전트를 `-javaagent` 옵션으로 주입하여 완벽한 격리 환경 모니터링 성공.
+- **Fix**: ByteBuddy의 `ElementMatchers` 스캔 범위를 `TargetApp` 단일 클래스에서 패키지 전체(`com.extreme.java`)로 확장하여 Controller 스캔 문제 해결.
+- **Docs**: 테스트용 타겟 애플리케이션(`spring-target-app`) 프로젝트 내재화 및 실행 가이드 작성.
+
 #### [2026-02-24] Dynamic Attach & Advice 인라인 주입 완성
 - **Feature**: 실행 중인 JVM(Java 25)을 끄지 않고 외부에서 에이전트를 동적으로 주입하는 `DynamicAttacher` 구현.
 - **Arch**: Java 25의 엄격한 스택 검증을 통과하기 위해 `MethodDelegation` 대신 `Advice` (Inlining) 방식 도입.

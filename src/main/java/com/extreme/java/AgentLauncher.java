@@ -24,19 +24,19 @@ public class AgentLauncher {
         System.out.println(" [" + mode + "] 에이전트가 JVM에 침투했습니다.");
 
         new AgentBuilder.Default()
-                .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)   // 이미 로드된 클래스도 재변환 허용
-                .disableClassFormatChanges()                    // 뼈대 변경 금지
+                .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
+                .disableClassFormatChanges()
                 .with(new AgentBuilder.Listener.Adapter(){
                     @Override
                     public void onTransformation(net.bytebuddy.description.type.TypeDescription typeDescription, ClassLoader classLoader, net.bytebuddy.utility.JavaModule module, boolean loaded, net.bytebuddy.dynamic.DynamicType dynamicType){
-                        System.out.println("[성공] 바이트코드 변환 완료: " + typeDescription.getSimpleName());
+                        System.out.println("🎯 [성공] 바이트코드 변환 완료: " + typeDescription.getSimpleName());
                     }
                     @Override
                     public void onError(String typeName, ClassLoader classLoader, net.bytebuddy.utility.JavaModule module, boolean loaded, Throwable throwable){
-                        System.err.println("[에러] 변환 실패 (" + typeName + "): " + throwable.getMessage());
+                        System.err.println("🚨 [에러] 변환 실패 (" + typeName + "): " + throwable.getMessage());
                     }
                 })
-                .type(ElementMatchers.nameStartsWith("com.extreme.java.TargetApp"))
+                .type(nameStartsWith("com.extreme.java"))
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) ->
                         builder
                                 .visit(Advice.to(TimerAdvice.class).on(isAnnotatedWith(Timer.class)))

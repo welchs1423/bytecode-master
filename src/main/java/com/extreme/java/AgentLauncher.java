@@ -2,7 +2,10 @@ package com.extreme.java;
 
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
+import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.matcher.ElementMatchers;
+import net.bytebuddy.utility.JavaModule;
 
 import java.lang.instrument.Instrumentation;
 
@@ -28,22 +31,39 @@ public class AgentLauncher {
                 .disableClassFormatChanges()
                 .with(new AgentBuilder.Listener.Adapter(){
                     @Override
-                    public void onTransformation(net.bytebuddy.description.type.TypeDescription typeDescription, ClassLoader classLoader, net.bytebuddy.utility.JavaModule module, boolean loaded, net.bytebuddy.dynamic.DynamicType dynamicType){
-                        System.out.println("🎯 [성공] 바이트코드 변환 완료: " + typeDescription.getSimpleName());
+                    public void onTransformation(TypeDescription typeDescription, ClassLoader classLoader, JavaModule module, boolean loaded, DynamicType dynamicType){
+                        System.out.println("[성공] 바이트코드 변환 완료: " + typeDescription.getSimpleName());
                     }
                     @Override
-                    public void onError(String typeName, ClassLoader classLoader, net.bytebuddy.utility.JavaModule module, boolean loaded, Throwable throwable){
-                        System.err.println("🚨 [에러] 변환 실패 (" + typeName + "): " + throwable.getMessage());
+                    public void onError(String typeName, ClassLoader classLoader, JavaModule module, boolean loaded, Throwable throwable){
+                        System.err.println("[에러] 변환 실패 (" + typeName + "): " + throwable.getMessage());
                     }
                 })
                 .type(nameStartsWith("com.extreme.java"))
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) ->
                         builder
+                                .visit(Advice.to(TraceAdvice.class).on(isAnnotatedWith(Trace.class)))
                                 .visit(Advice.to(TimerAdvice.class).on(isAnnotatedWith(Timer.class)))
                                 .visit(Advice.to(LogDataAdvice.class).on(isAnnotatedWith(LogData.class)))
                                 .visit(Advice.to(CatchErrorAdvice.class).on(isAnnotatedWith(CatchError.class)))
                 )
                 .installOn(inst);
+    }
+
+// ==============================================================================
+    // 💡 아래부터는 각 Advice들이 TraceContext에서 ID를 꺼내와서 로그에 같이 찍도록 수정되었습니다.
+    // ==============================================================================
+
+    public static class TraceAdvice {
+        @Advice.OnMethodEnter
+        public static void enter(){
+            TraceContext.startTrace();
+        }
+
+        @Advice.OnMethodExit(onThrowable = Throwable.class)
+        public static void exit(){
+            TraceContext.clear();
+        }
     }
 
     public static class TimerAdvice{
@@ -54,7 +74,7 @@ public class AgentLauncher {
 
         @Advice.OnMethodExit(onThrowable = Throwable.class)
         public static void exit(@Advice.Origin("#m") String methodName, @Advice.Enter long start){
-            System.out.printf("[%s] 실행 시간: %.4fms%n", methodName, (System.nanoTime() - start) / 1_000_000.0);
+            System.out.printf("[TraceID: %s] [%s] 실행 시간: %.4fms%n", TraceContext.getTraceId(), methodName, (System.nanoTime() - start) / 1_000_000.0);
         }
     }
 
@@ -63,7 +83,7 @@ public class AgentLauncher {
         public static void enter(
                 @Advice.Origin("#m") String methodName,
                 @Advice.AllArguments(readOnly = true, typing = net.bytebuddy.implementation.bytecode.assign.Assigner.Typing.DYNAMIC) Object[] args) {
-            System.out.printf("[%s] 입력값: %s%n", methodName, java.util.Arrays.toString(args));
+            System.out.printf("[TraceID: %s] [%s] 입력값: %s%n", TraceContext.getTraceId(), methodName, java.util.Arrays.toString(args));
         }
 
         @Advice.OnMethodExit(onThrowable = Throwable.class)
@@ -71,9 +91,9 @@ public class AgentLauncher {
                 @Advice.Origin("#m") String methodName,
                 @Advice.Return(typing = net.bytebuddy.implementation.bytecode.assign.Assigner.Typing.DYNAMIC) Object result) {
             if (result != null) {
-                System.out.printf("[%s] 반환값: %s%n", methodName, result);
+                System.out.printf("[TraceID: %s] [%s] 반환값: %s%n", TraceContext.getTraceId(), methodName, result);
             } else {
-                System.out.printf("[%s] 반환값: null%n", methodName);
+                System.out.printf("[TraceID: %s] [%s] 반환값: null%n", TraceContext.getTraceId(), methodName);
             }
         }
     }
@@ -82,7 +102,7 @@ public class AgentLauncher {
         @Advice.OnMethodExit(onThrowable = Throwable.class)
         public static void exit(@Advice.Origin("#m") String methodName, @Advice.Thrown Throwable thrown){
             if (thrown != null){
-                System.err.printf("[%s] 실행 중 예외 감지! 타입: %s, 메시지: %s%n", methodName, thrown.getClass().getSimpleName(),thrown.getMessage());
+                System.err.printf("[TraceID: %s] [%s] 실행 중 예외 감지! 타입: %s, 메시지: %s%n", TraceContext.getTraceId(), methodName, thrown.getClass().getSimpleName(),thrown.getMessage());
             }
         }
     }

@@ -14,6 +14,12 @@ JVM의 심장부인 바이트코드를 직접 조작하여 애플리케이션의
 
 ### 📅 개발 일지 (Changelog)
 
+#### [2026-02-25] ThreadLocal 기반 Trace ID(분산 추적) 기능 구현 완료
+- **Feature**: `ThreadLocal`을 활용한 `TraceContext` 구현으로 멀티 스레드 환경에서 요청별 고유 ID 격리 성공.
+- **Feature**: 신규 애노테이션 `@Trace` 도입. 요청 진입점에서 8자리 짧은 UUID를 발급하여 전체 실행 흐름 추적.
+- **Improvement**: 모든 Advice(Timer, LogData, CatchError) 출력 포맷에 `[TraceID: %s]` 접두사 추가.
+- **Fix**: 각 요청 종료 시 `ThreadLocal.remove()`를 강제 호출하여 웹 서버(Tomcat)의 스레드 풀 환경에서 발생할 수 있는 메모리 누수 및 ID 오염 방지.
+
 #### [2026-02-25] Spring Boot 실전 연동 및 통합 테스트 완료
 - **Feature**: 독립된 Spring Boot 환경(Tomcat)에 에이전트를 `-javaagent` 옵션으로 주입하여 완벽한 격리 환경 모니터링 성공.
 - **Fix**: ByteBuddy의 `ElementMatchers` 스캔 범위를 `TargetApp` 단일 클래스에서 패키지 전체(`com.extreme.java`)로 확장하여 Controller 스캔 문제 해결.

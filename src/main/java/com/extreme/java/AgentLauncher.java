@@ -39,13 +39,14 @@ public class AgentLauncher {
                         System.err.println("[에러] 변환 실패 (" + typeName + "): " + throwable.getMessage());
                     }
                 })
-                .type(nameStartsWith("com.extreme.java"))
+                .type(nameStartsWith("com.extreme.java").or(nameStartsWith("org.h2.jdbc.JdbcPreparedStatement")))
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) ->
                         builder
                                 .visit(Advice.to(TraceAdvice.class).on(isAnnotatedWith(Trace.class)))
                                 .visit(Advice.to(TimerAdvice.class).on(isAnnotatedWith(Timer.class)))
                                 .visit(Advice.to(LogDataAdvice.class).on(isAnnotatedWith(LogData.class)))
                                 .visit(Advice.to(CatchErrorAdvice.class).on(isAnnotatedWith(CatchError.class)))
+                                .visit(Advice.to(JdbcAdvice.class).on(named("executeQuery").or(named("executeUpdate"))))
                 )
                 .installOn(inst);
     }
@@ -104,6 +105,22 @@ public class AgentLauncher {
             if (thrown != null){
                 System.err.printf("[TraceID: %s] [%s] 실행 중 예외 감지! 타입: %s, 메시지: %s%n", TraceContext.getTraceId(), methodName, thrown.getClass().getSimpleName(),thrown.getMessage());
             }
+        }
+    }
+
+    public static class JdbcAdvice {
+        @Advice.OnMethodEnter
+        public static long enter(){
+            return System.nanoTime();
+        }
+
+        @Advice.OnMethodExit(onThrowable = Throwable.class)
+        public static void exit(@Advice.This Object preparedStatement, @Advice.Enter long start){
+            long duration = System.nanoTime() - start;
+
+            // @Advice.This 를 통해 현재 실행 중인 H2 PreparedStatement 객체 자체를 가져와서 toString()으로 쿼리 추출
+            System.out.printf("[TraceId: %s] [JDBC] 쿼리 실행 시간: %.4fms%n", TraceContext.getTraceId(), duration / 1_000_000.0);
+            System.out.printf("[TraceId: %s] [JDBC] 실행된 SQL: %s%n", TraceContext.getTraceId(), preparedStatement.toString());
         }
     }
 }

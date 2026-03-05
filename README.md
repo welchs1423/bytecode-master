@@ -14,6 +14,11 @@ JVM의 심장부인 바이트코드를 직접 조작하여 애플리케이션의
 
 ### 📅 개발 일지 (Changelog)
 
+#### [2026-03-05] JDBC PreparedStatement 바이트코드 조작 및 SQL 쿼리 추적 구현
+- **Feature**: 외부 라이브러리(H2 JDBC Driver)의 `JdbcPreparedStatement` 클래스를 ByteBuddy로 동적 변환하여 DB 접근 계층 모니터링 성공.
+- **Improvement**: 쿼리 실행 시간(ms) 측정 및 바인딩된 파라미터가 포함된 실제 SQL 쿼리 추출 기능 구현.
+- **Architecture**: Controller 계층부터 DB Access 계층까지 동일한 `TraceID`를 유지하여 완벽한 End-to-End 분산 추적(Distributed Tracing) 파이프라인 완성.
+
 #### [2026-02-25] ThreadLocal 기반 Trace ID(분산 추적) 기능 구현 완료
 - **Feature**: `ThreadLocal`을 활용한 `TraceContext` 구현으로 멀티 스레드 환경에서 요청별 고유 ID 격리 성공.
 - **Feature**: 신규 애노테이션 `@Trace` 도입. 요청 진입점에서 8자리 짧은 UUID를 발급하여 전체 실행 흐름 추적.

@@ -75,7 +75,8 @@ public class AgentLauncher {
 
         @Advice.OnMethodExit(onThrowable = Throwable.class)
         public static void exit(@Advice.Origin("#m") String methodName, @Advice.Enter long start){
-            System.out.printf("[TraceID: %s] [%s] 실행 시간: %.4fms%n", TraceContext.getTraceId(), methodName, (System.nanoTime() - start) / 1_000_000.0);
+            String log = String.format("[TraceID: %s] [%s] 실행 시간: %.4fms", TraceContext.getTraceId(),methodName, (System.nanoTime() - start) / 1_000_000.0);
+            DataSender.send(log);
         }
     }
 
@@ -84,18 +85,18 @@ public class AgentLauncher {
         public static void enter(
                 @Advice.Origin("#m") String methodName,
                 @Advice.AllArguments(readOnly = true, typing = net.bytebuddy.implementation.bytecode.assign.Assigner.Typing.DYNAMIC) Object[] args) {
-            System.out.printf("[TraceID: %s] [%s] 입력값: %s%n", TraceContext.getTraceId(), methodName, java.util.Arrays.toString(args));
+            String log = String.format("[TraceID: %s] [%s] 입력값: %s", TraceContext.getTraceId(), methodName, java.util.Arrays.toString(args));
+            DataSender.send(log);
+
         }
 
         @Advice.OnMethodExit(onThrowable = Throwable.class)
         public static void exit(
                 @Advice.Origin("#m") String methodName,
                 @Advice.Return(typing = net.bytebuddy.implementation.bytecode.assign.Assigner.Typing.DYNAMIC) Object result) {
-            if (result != null) {
-                System.out.printf("[TraceID: %s] [%s] 반환값: %s%n", TraceContext.getTraceId(), methodName, result);
-            } else {
-                System.out.printf("[TraceID: %s] [%s] 반환값: null%n", TraceContext.getTraceId(), methodName);
-            }
+            String log = String.format("[TraceID: %s] [%s] 반환값: %s", TraceContext.getTraceId(), methodName, result != null ? result : "null");
+            DataSender.send(log);
+
         }
     }
 
@@ -103,7 +104,8 @@ public class AgentLauncher {
         @Advice.OnMethodExit(onThrowable = Throwable.class)
         public static void exit(@Advice.Origin("#m") String methodName, @Advice.Thrown Throwable thrown){
             if (thrown != null){
-                System.err.printf("[TraceID: %s] [%s] 실행 중 예외 감지! 타입: %s, 메시지: %s%n", TraceContext.getTraceId(), methodName, thrown.getClass().getSimpleName(),thrown.getMessage());
+                String log = String.format("[TraceID: %s] [%s] 실행 중 예외 감지! 타입: %s, 메시지: %s", TraceContext.getTraceId(), methodName, thrown.getClass().getSimpleName(), thrown.getMessage());
+                DataSender.send(log);
             }
         }
     }
@@ -117,10 +119,11 @@ public class AgentLauncher {
         @Advice.OnMethodExit(onThrowable = Throwable.class)
         public static void exit(@Advice.This Object preparedStatement, @Advice.Enter long start){
             long duration = System.nanoTime() - start;
+            String logTime = String.format("[TraceID: %s] [JDBC] 쿼리 실행 시간: %.4fms", TraceContext.getTraceId(), duration / 1_000_000.0);
+            String logSql = String.format("[TraceID: %s] [JDBC] 실행된 SQL: %s", TraceContext.getTraceId(), preparedStatement.toString());
 
-            // @Advice.This 를 통해 현재 실행 중인 H2 PreparedStatement 객체 자체를 가져와서 toString()으로 쿼리 추출
-            System.out.printf("[TraceId: %s] [JDBC] 쿼리 실행 시간: %.4fms%n", TraceContext.getTraceId(), duration / 1_000_000.0);
-            System.out.printf("[TraceId: %s] [JDBC] 실행된 SQL: %s%n", TraceContext.getTraceId(), preparedStatement.toString());
+            DataSender.send(logTime);
+            DataSender.send(logSql);
         }
     }
 }

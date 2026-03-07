@@ -14,6 +14,10 @@ JVM의 심장부인 바이트코드를 직접 조작하여 애플리케이션의
 
 ### 📅 개발 일지 (Changelog)
 
+#### [2026-03-07] 비동기 논블로킹(Non-blocking) 데이터 전송 큐 구현 및 Zero-overhead 달성
+- **Architecture**: 에이전트의 데이터 처리가 타겟 애플리케이션의 메인 스레드(Tomcat) 성능에 영향을 주지 않도록 `LinkedBlockingQueue` 기반의 생산자-소비자(Producer-Consumer) 패턴 적용.
+- **Feature**: 별도의 데몬 스레드(`APM-DataSender-Thread`)를 생성하여 수집된 성능 지표를 백그라운드에서 비동기로 처리. 상용 APM과 동일한 수준의 성능 최적화 달성.
+
 #### [2026-03-05] JDBC PreparedStatement 바이트코드 조작 및 SQL 쿼리 추적 구현
 - **Feature**: 외부 라이브러리(H2 JDBC Driver)의 `JdbcPreparedStatement` 클래스를 ByteBuddy로 동적 변환하여 DB 접근 계층 모니터링 성공.
 - **Improvement**: 쿼리 실행 시간(ms) 측정 및 바인딩된 파라미터가 포함된 실제 SQL 쿼리 추출 기능 구현.

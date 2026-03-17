@@ -1,6 +1,12 @@
-﻿.gradle/
-.idea/
+﻿# Node.js
+node_modules/
+npm-debug.log
+
+# Java & Gradle
 build/
+.gradle/
 out/
-*.class
-*.jar
+
+# IDE
+.idea/
+*.iml

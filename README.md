@@ -14,6 +14,10 @@ JVM의 심장부인 바이트코드를 직접 조작하여 애플리케이션의
 
 ### 📅 개발 일지 (Changelog)
 
+#### [2026-03-18] JDBC SQL 정밀 추적 및 Node.js 기반 중앙 수집 체계 구축
+- **Interception & Communication**: ByteBuddy를 이용한 JDBC 실행 SQL 및 파라미터 추출 로직을 고도화하고, Java 11 `HttpClient`를 통해 수집된 데이터를 Node.js 서버로 비동기 전송하는 실시간 파이프라인 완성.
+- **Architecture & Config**: Express 기반의 수집 서버(Collector)를 신규 구축하고, 에이전트와 숙주 앱을 포함한 프로젝트 전체를 모노레포(Monorepo) 구조로 재편하여 실무형 형상 관리 체계를 확립함.
+
 #### [2026-03-07] 비동기 논블로킹(Non-blocking) 데이터 전송 큐 구현 및 Zero-overhead 달성
 - **Architecture**: 에이전트의 데이터 처리가 타겟 애플리케이션의 메인 스레드(Tomcat) 성능에 영향을 주지 않도록 `LinkedBlockingQueue` 기반의 생산자-소비자(Producer-Consumer) 패턴 적용.
 - **Feature**: 별도의 데몬 스레드(`APM-DataSender-Thread`)를 생성하여 수집된 성능 지표를 백그라운드에서 비동기로 처리. 상용 APM과 동일한 수준의 성능 최적화 달성.

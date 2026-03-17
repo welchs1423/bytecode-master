@@ -1,12 +1,5 @@
-﻿# Node.js
-node_modules/
-npm-debug.log
-
-# Java & Gradle
+﻿node_modules/
 build/
 .gradle/
-out/
-
-# IDE
 .idea/
-*.iml
+*.jar
